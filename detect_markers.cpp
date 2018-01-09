@@ -167,27 +167,9 @@ int main(int argc, char *argv[]) {
 
             }
         }
-        if (total_count < 1)
 
-        double side_length = total/total_count;
+        double side_length = total_count ? total/total_count : 0;
         cout << "side_length: " << side_length << endl;
-
-
-
-            // cout << "{ "
-            // "id: " << ids[i] << ", "
-            // "t: [" << tvecs[i][0] << ", " << tvecs[i][1] << ", " << tvecs[i][2] << "],"
-            // "r: [" << rvecs[i][0] << ", " << rvecs[i][1] << ", " << rvecs[i][2] << "]"
-            // << "}" << endl;
-
-
-        // if(ids.size() >= 2) {
-        //     Vec3d diff = tvecs[1] - tvecs[0];
-        //     cout << "a: " << tvecs[0][0] << ", " << tvecs[0][1] << ", " << tvecs[0][2] << " "
-        //     "b: " << tvecs[1][0] << ", " << tvecs[1][1] << ", " << tvecs[1][2] << " "
-        //     "diff: " << diff[0] << ", " << diff[1] << ", " << diff[2] << " "
-        //     "mag: " << norm(diff) << endl;
-        // }
 
         // draw results
         image.copyTo(imageCopy);
