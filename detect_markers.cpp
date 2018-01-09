@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        double side_length = total_count ? total/total_count : 0;
+        double side_length = total_count ? total/total_count : 0.05;
         cout << "side_length: " << side_length << endl;
 
         // draw results
@@ -178,17 +178,25 @@ int main(int argc, char *argv[]) {
 
             if(estimatePose) {
                 for(unsigned int i = 0; i < ids.size(); i++) {
-                    double half_side = -side_length;
+                    double half_side = side_length/2 * -1; // -1 for go below the marker
                     cv::Mat rot_mat;
                     Rodrigues(rvecs[i], rot_mat);
 
                      // transpose of rot_mat for easy columns extraction
                      Mat rot_mat_t = rot_mat.t();
-                     // transform along z axis
+                     // transform along z axis to moddle shaft/axis
                      double * rz = rot_mat_t.ptr<double>(2); // x=0, y=1, z=2
                      tvecs[i][0] +=  rz[0]*half_side;
                      tvecs[i][1] +=  rz[1]*half_side;
                      tvecs[i][2] +=  rz[2]*half_side;
+
+                     // transform along y axis to center of gravity
+                     double * ry = rot_mat_t.ptr<double>(1); // x=0, y=1, z=2
+                     tvecs[i][0] -=  ry[0]*half_side*2*(row(ids[i])-2.5);
+                     tvecs[i][1] -=  ry[1]*half_side*2*(row(ids[i])-2.5);
+                     tvecs[i][2] -=  ry[2]*half_side*2*(row(ids[i])-2.5);
+
+
 
                     aruco::drawAxis(imageCopy, camMatrix, distCoeffs, rvecs[i], tvecs[i],
                                     markerLength * 0.5f);
@@ -206,4 +214,5 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
 
