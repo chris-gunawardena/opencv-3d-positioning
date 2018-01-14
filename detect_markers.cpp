@@ -71,6 +71,7 @@ int col(int id) {
     return id - (row(id) * 10);
 }
 
+void transform(Vec3d &point, Mat rot_mat, double xyz[3]);
 
 /**
  */
@@ -185,25 +186,34 @@ int main(int argc, char *argv[]) {
 
                 // glasses
                 if (row(ids[i]) == 0) {
+
+                    switch (col(ids[i])) {
+                        // ear right
+                        case 1:
+                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            break;
+                        // ear left
+                        case 2:
+                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            break;
+                        // eye left
+                        case 3:
+                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            break;
+                        // eye right
+                        case 4:
+                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            break;
+                    }
+
                 } 
                 // cube
                 else {
-
-                    // transform along z axis to moddle shaft/axis
-                    double * rz = rot_mat_t.ptr<double>(2); // x=0, y=1, z=2
-                    center_point[0] -=  rz[0]*side_length/2;
-                    center_point[1] -=  rz[1]*side_length/2;
-                    center_point[2] -=  rz[2]*side_length/2;
-
-                    // transform along y axis to center of gravity
-                    double * ry = rot_mat_t.ptr<double>(1); // x=0, y=1, z=2
-                    center_point[0] +=  ry[0]*side_length*(row(ids[i])-0.5);
-                    center_point[1] +=  ry[1]*side_length*(row(ids[i])-0.5);
-                    center_point[2] +=  ry[2]*side_length*(row(ids[i])-0.5);
-                }
+                    transform(center_point, rot_mat_t, (double []){0, side_length*(row(ids[i])-0.5), -side_length/2});
                     cube_center_points.push_back(center_point);
-                    // draw results
-                    aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
+                }
+                // draw results
+                aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
             }
         }
 
@@ -217,5 +227,15 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+void transform(Vec3d &point, Mat rot_mat, double xyz[3]) {
+    for(int i=0; i<3; i++) {
+        double * r = rot_mat.ptr<double>(i); // x=0, y=1, z=2
+        for(int j=0; j<3; j++) {
+            point[j] +=  r[j]*xyz[i];
+        }
+    }
+}
+
 
 
