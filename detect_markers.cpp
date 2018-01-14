@@ -168,46 +168,49 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        double side_length = total_count ? total/total_count : 0.05;
-        cout << "side_length: " << side_length << endl;
+        double side_length = total_count ? total/total_count : 0;
+       // cout << "side_length: " << side_length << endl;
 
-        // draw results
-        image.copyTo(imageCopy);
-        if(ids.size() > 0) {
-            aruco::drawDetectedMarkers(imageCopy, corners, ids);
+        // find center of the cube
+        vector<Vec3d> cube_center_points;
+        if (ids.size() > 0 && side_length != 0) {
+            aruco::drawDetectedMarkers(image, corners, ids);
 
-            if(estimatePose) {
-                for(unsigned int i = 0; i < ids.size(); i++) {
-                    double half_side = side_length/2 * -1; // -1 for go below the marker
-                    cv::Mat rot_mat;
-                    Rodrigues(rvecs[i], rot_mat);
+            for(unsigned int i = 0; i < ids.size(); i++) {
 
-                     // transpose of rot_mat for easy columns extraction
-                     Mat rot_mat_t = rot_mat.t();
-                     // transform along z axis to moddle shaft/axis
-                     double * rz = rot_mat_t.ptr<double>(2); // x=0, y=1, z=2
-                     tvecs[i][0] +=  rz[0]*half_side;
-                     tvecs[i][1] +=  rz[1]*half_side;
-                     tvecs[i][2] +=  rz[2]*half_side;
+                cv::Mat rot_mat;
+                Rodrigues(rvecs[i], rot_mat);
+                Mat rot_mat_t = rot_mat.t(); // transpose of rot_mat for easy columns extraction
+                Vec3d center_point = tvecs[i];
 
-                     // transform along y axis to center of gravity
-                     double * ry = rot_mat_t.ptr<double>(1); // x=0, y=1, z=2
-                     tvecs[i][0] -=  ry[0]*half_side*2*(row(ids[i])-2.5);
-                     tvecs[i][1] -=  ry[1]*half_side*2*(row(ids[i])-2.5);
-                     tvecs[i][2] -=  ry[2]*half_side*2*(row(ids[i])-2.5);
+                // glasses
+                if (row(ids[i]) == 0) {
+                } 
+                // cube
+                else {
 
+                    // transform along z axis to moddle shaft/axis
+                    double * rz = rot_mat_t.ptr<double>(2); // x=0, y=1, z=2
+                    center_point[0] -=  rz[0]*side_length/2;
+                    center_point[1] -=  rz[1]*side_length/2;
+                    center_point[2] -=  rz[2]*side_length/2;
 
-
-                    aruco::drawAxis(imageCopy, camMatrix, distCoeffs, rvecs[i], tvecs[i],
-                                    markerLength * 0.5f);
+                    // transform along y axis to center of gravity
+                    double * ry = rot_mat_t.ptr<double>(1); // x=0, y=1, z=2
+                    center_point[0] +=  ry[0]*side_length*(row(ids[i])-0.5);
+                    center_point[1] +=  ry[1]*side_length*(row(ids[i])-0.5);
+                    center_point[2] +=  ry[2]*side_length*(row(ids[i])-0.5);
                 }
+                    cube_center_points.push_back(center_point);
+                    // draw results
+                    aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
             }
         }
 
         if(showRejected && rejected.size() > 0)
-            aruco::drawDetectedMarkers(imageCopy, rejected, noArray(), Scalar(100, 0, 255));
+            aruco::drawDetectedMarkers(image, rejected, noArray(), Scalar(100, 0, 255));
 
-        imshow("out", imageCopy);
+        imshow("out", image);
         char key = (char)waitKey(waitTime);
         if(key == 27) break;
     }
