@@ -2,6 +2,7 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <iostream>
+#include <numeric>
 
 using namespace std;
 using namespace cv;
@@ -133,6 +134,17 @@ int main(int argc, char *argv[]) {
 
     double totalTime = 0;
     int totalIterations = 0;
+
+    // 1
+    double x1 = -0.65;
+    double y1 = 0.2;
+    double z1 = -1.6;
+
+    // 2
+    double x2 = 0.1;
+    double y2 = 0.3;
+    double z2 = -1.7;
+
     while(inputVideo.grab()) {
         totalIterations++;
 
@@ -150,30 +162,33 @@ int main(int argc, char *argv[]) {
         if(estimatePose && ids.size() > 0)
             aruco::estimatePoseSingleMarkers(corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
 
-        double total = 0;
-        double total_count = 0;
-        // estimate distance bettween markers:
-        for(int i=0; i<ids.size(); i++) {
-            for(int j=0; j<i; j++) {
-                Vec3d diff = tvecs[i] - tvecs[j];
-                double distance_between_points = norm(diff);
+        // double total = 0;
+        // double total_count = 0;
+        // // estimate distance bettween markers:
+        // for(int i=0; i<ids.size(); i++) {
+        //     for(int j=0; j<i; j++) {
+        //         Vec3d diff = tvecs[i] - tvecs[j];
+        //         double distance_between_points = norm(diff);
 
-                if (col(ids[i]) == col(ids[j])) { // 1.27
-                    total += distance_between_points / abs(row(ids[i]) - row(ids[j])); // devide by
-                    total_count++;
-                } else if (row(ids[i]) == row(ids[j])) { // 1.33
-                    total += sqrt(distance_between_points * distance_between_points / 2) * 2;
-                    total_count++;
-                }
+        //         if (col(ids[i]) == col(ids[j])) { // 1.27
+        //             total += distance_between_points / abs(row(ids[i]) - row(ids[j])); // devide by
+        //             total_count++;
+        //         } else if (row(ids[i]) == row(ids[j])) { // 1.33
+        //             total += sqrt(distance_between_points * distance_between_points / 2) * 2;
+        //             total_count++;
+        //         }
 
-            }
-        }
+        //     }
+        // }
 
-        double side_length = total_count ? total/total_count : 0;
-       // cout << "side_length: " << side_length << endl;
+        // double side_length = total_count ? total/total_count : 0;
+        //cout << "side_length: " << side_length << endl;
+        double side_length = 0.127;
 
         // find center of the cube
         vector<Vec3d> cube_center_points;
+        vector<Vec3d> glasses_center_points;
+
         if (ids.size() > 0 && side_length != 0) {
             aruco::drawDetectedMarkers(image, corners, ids);
 
@@ -190,22 +205,23 @@ int main(int argc, char *argv[]) {
                     switch (col(ids[i])) {
                         // ear right
                         case 1:
-                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            transform(center_point, rot_mat_t, (double []){x1*side_length, y1*side_length, z1*side_length});
                             break;
                         // ear left
                         case 2:
-                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            transform(center_point, rot_mat_t, (double []){x2*side_length, y2*side_length, z2*side_length});
                             break;
                         // eye left
                         case 3:
-                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            transform(center_point, rot_mat_t, (double []){side_length/2, -side_length, -side_length*0.75});
                             break;
                         // eye right
                         case 4:
-                            transform(center_point, rot_mat_t, (double []){0, 0, 0});
+                            transform(center_point, rot_mat_t, (double []){-side_length/2, -side_length, -side_length*0.75});
                             break;
                     }
 
+                    glasses_center_points.push_back(center_point);
                 } 
                 // cube
                 else {
@@ -215,14 +231,47 @@ int main(int argc, char *argv[]) {
                 // draw results
                 aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
             }
+
+            Vec3d sum = std::accumulate(
+                cube_center_points.begin(), cube_center_points.end(), // Run from begin to end
+                Vec3d(0.0,0.0,0.0),       // Initialize with a zero point
+                std::plus<cv::Vec3d>()      // Use addition for each point (default)
+            );
+            Vec3d cube_mean = Vec3d(sum[0]/cube_center_points.size(),sum[1]/cube_center_points.size(),sum[2]/cube_center_points.size());//sum / cube_center_points.size(); // Divide by count to get mean
+            aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[0], cube_mean, markerLength * 2);
+
         }
 
         if(showRejected && rejected.size() > 0)
             aruco::drawDetectedMarkers(image, rejected, noArray(), Scalar(100, 0, 255));
 
         imshow("out", image);
-        char key = (char)waitKey(waitTime);
-        if(key == 27) break;
+
+
+
+
+        // int key = cvWaitKey(10);
+        // switch(key) {
+        //     case 'x':
+        //         x1 += 0.1;
+        //         break;
+        //     case 's':
+        //         x1 -= 0.1;
+        //         break;
+        //     case 'y':
+        //         y1 += 0.1;
+        //         break;
+        //     case '6':
+        //         y1 -= 0.1;
+        //         break;
+        //     case 'z':
+        //         z1 += 0.1;
+        //         break;
+        //     case 'a':
+        //         z1 -= 0.1;
+        //         break;
+        // }
+        // cout << " x: " << x1 << " y: " << y1 << " z: " << z1 << " key:" << key << endl;
     }
 
     return 0;
