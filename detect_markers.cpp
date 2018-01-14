@@ -241,13 +241,19 @@ int main(int argc, char *argv[]) {
             get_mean(glasses_center_points, glasses_mean);
             aruco::drawAxis(image, camMatrix, distCoeffs, Vec3d(0.0, 0.0, 0.0), glasses_mean, markerLength * 2);
 
+
+            cout << "{ "
+            "c: [" << cube_mean[0] << ", " << cube_mean[1] << ", " << cube_mean[2] << "],"
+            "g: [" << glasses_mean[0] << ", " << glasses_mean[1] << ", " << glasses_mean[2] << "]"
+            << "}" << endl;
+
         }
 
         if(showRejected && rejected.size() > 0)
             aruco::drawDetectedMarkers(image, rejected, noArray(), Scalar(100, 0, 255));
 
         imshow("out", image);
-        char key = (char)waitKey(waitTime);
+        char key = (char)waitKey(1);
         if(key == 27) break;
 
         // int key = cvWaitKey(10);
