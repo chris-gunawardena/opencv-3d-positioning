@@ -73,6 +73,7 @@ int col(int id) {
 }
 
 void transform(Vec3d &point, Mat rot_mat, double xyz[3]);
+void get_mean(vector<Vec3d> &points, Vec3d &mean);
 
 /**
  */
@@ -229,16 +230,16 @@ int main(int argc, char *argv[]) {
                     cube_center_points.push_back(center_point);
                 }
                 // draw results
-                aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
+                //aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
             }
 
-            Vec3d sum = std::accumulate(
-                cube_center_points.begin(), cube_center_points.end(), // Run from begin to end
-                Vec3d(0.0,0.0,0.0),       // Initialize with a zero point
-                std::plus<cv::Vec3d>()      // Use addition for each point (default)
-            );
-            Vec3d cube_mean = Vec3d(sum[0]/cube_center_points.size(),sum[1]/cube_center_points.size(),sum[2]/cube_center_points.size());//sum / cube_center_points.size(); // Divide by count to get mean
-            aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[0], cube_mean, markerLength * 2);
+            Vec3d cube_mean(0.0, 0.0, 0.0);
+            get_mean(cube_center_points, cube_mean);
+            aruco::drawAxis(image, camMatrix, distCoeffs, Vec3d(0.0, 0.0, 0.0), cube_mean, markerLength * 2);
+
+            Vec3d glasses_mean(0.0, 0.0, 0.0);
+            get_mean(glasses_center_points, glasses_mean);
+            aruco::drawAxis(image, camMatrix, distCoeffs, Vec3d(0.0, 0.0, 0.0), glasses_mean, markerLength * 2);
 
         }
 
@@ -246,9 +247,8 @@ int main(int argc, char *argv[]) {
             aruco::drawDetectedMarkers(image, rejected, noArray(), Scalar(100, 0, 255));
 
         imshow("out", image);
-
-
-
+        char key = (char)waitKey(waitTime);
+        if(key == 27) break;
 
         // int key = cvWaitKey(10);
         // switch(key) {
@@ -275,6 +275,15 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+void get_mean(vector<Vec3d> &points, Vec3d &mean) {
+    Vec3d sum = std::accumulate(
+        points.begin(), points.end(), // Run from begin to end
+        Vec3d(0.0,0.0,0.0),       // Initialize with a zero point
+        std::plus<cv::Vec3d>()      // Use addition for each point (default)
+    );
+    mean = Vec3d(sum[0]/points.size(), sum[1]/points.size(), sum[2]/points.size());
 }
 
 void transform(Vec3d &point, Mat rot_mat, double xyz[3]) {
