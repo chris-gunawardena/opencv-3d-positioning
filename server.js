@@ -16,12 +16,12 @@ io.on('connection', function(socket){
 });
 
 sh.stdout.on('data', function(data) {
-  console.log('message', data.toString());
+  console.log( data.toString());
   io.emit('message', data.toString());
 });
 
 sh.stderr.on('data', function(data) {
-  console.log('message', data.toString());
+  console.log( data.toString());
   io.emit('message', data.toString());
 });
 

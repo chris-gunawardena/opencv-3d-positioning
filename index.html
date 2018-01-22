@@ -23,19 +23,20 @@
 
   var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
   var controls = new THREE.OrbitControls( camera );
-  camera.position.z = 5;
+  camera.position.z = 100;
   controls.update();
 
   var renderer = new THREE.WebGLRenderer();
   renderer.setSize( window.innerWidth, window.innerHeight );
   document.body.appendChild( renderer.domElement );
 
-  var geometry = new THREE.BoxGeometry( 1, 1, .1 );
-  var material = new THREE.MeshPhongMaterial( { color: 0xffffff, flatShading: true } );
-  var cube = new THREE.Mesh( geometry, material );
-  cube.updateMatrix();
-  cube.matrixAutoUpdate = false;
-  scene.add( cube );
+  var head_mesh;
+    loader = new THREE.JSONLoader();
+    loader.load( 'WaltHeadLo.js', function ( geometry ) {
+      head_mesh = new THREE.Mesh( geometry, new THREE.MeshNormalMaterial( { overdraw: 0.5 } ) );
+      scene.add( head_mesh );
+      renderer.render(scene, camera);
+    } )
 
   // lights
   var light = new THREE.DirectionalLight( 0xffffff );
@@ -55,6 +56,13 @@
 
   var socket = io();
   socket.on('message', function(data) {
+    var data_obj = JSON.parse(data.replace(/nan/g, 'null'));
+    cube.position.x = data_obj.g[0]*10;
+    cube.position.y = data_obj.g[1]*10;
+    cube.position.z = data_obj.g[2]*10;
+    cube.updateMatrix();
+    renderer.render(scene, camera);
+
     console.log(data);
   });
 </script>
