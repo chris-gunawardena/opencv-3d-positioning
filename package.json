@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.15.2",
+    "kalmanjs": "^1.0.0-beta",
     "socket.io": "^2.0.4",
     "three": "^0.89.0",
     "three-orbit-controls": "^82.1.0"

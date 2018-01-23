@@ -1,8 +1,6 @@
 
-// compile:
-// g++ -ggdb `pkg-config --cflags --libs opencv3` detect_markers.cpp -o dm.o 
-// run: 
-// ./dm.o -d=0 -c=cal.yml
+// compile:  g++ -ggdb `pkg-config --cflags --libs opencv3` detect_markers.cpp -o dm.o 
+// run:  ./dm.o -d=0 -c=cal.yml
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/aruco.hpp>
@@ -192,12 +190,12 @@ int main(int argc, char *argv[]) {
         // find center of the cube
         vector<Vec3d> cube_center_points;
         vector<Vec3d> glasses_center_points;
+        Vec3d glasses_r(NAN, NAN, NAN);
 
         if (ids.size() > 0 && side_length != 0) {
             aruco::drawDetectedMarkers(image, corners, ids);
 
             for(unsigned int i = 0; i < ids.size(); i++) {
-
                 cv::Mat rot_mat;
                 Rodrigues(rvecs[i], rot_mat);
                 Mat rot_mat_t = rot_mat.t(); // transpose of rot_mat for easy columns extraction
@@ -209,7 +207,7 @@ int main(int argc, char *argv[]) {
                     switch (col(ids[i])) {
                         // ear right
                         case 1: {
-                            transform(center_point, rot_mat_t, (double []){0, 0, c-60});
+                            transform(center_point, rot_mat_t, (double []){0, 0, c-0.06});
                             rotate(0, CV_PI/2, CV_PI, rot_mat, rvecs[i]);
                             break;
                         }
@@ -229,9 +227,8 @@ int main(int argc, char *argv[]) {
                             rotate(0.35, 0, 0, rot_mat, rvecs[i]);
                             break;
                     }
-
                     glasses_center_points.push_back(center_point);
-                    aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
+                    glasses_r = rvecs[i];
                 } 
                 // cube
                 else {
@@ -239,23 +236,22 @@ int main(int argc, char *argv[]) {
                     cube_center_points.push_back(center_point);
                 }
                 // draw results
-                // aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
+                aruco::drawAxis(image, camMatrix, distCoeffs, rvecs[i], center_point, markerLength * 0.5f);
             }
 
 
             Vec3d cube_mean(0.0, 0.0, 0.0);
             get_mean(cube_center_points, cube_mean);
-            //aruco::drawAxis(image, camMatrix, distCoeffs, Vec3d(0.0, 0.0, 0.0), cube_mean, markerLength * 2);
+            // aruco::drawAxis(image, camMatrix, distCoeffs, Vec3d(0.0, 0.0, 0.0), cube_mean, markerLength * 2);
 
             Vec3d glasses_mean(0.0, 0.0, 0.0);
             get_mean(glasses_center_points, glasses_mean);
             // aruco::drawAxis(image, camMatrix, distCoeffs, Vec3d(0.0, 0.0, 0.0), glasses_mean, markerLength * 2);
 
-
             cout << "{ "
-            "\"c\": [" << cube_mean[0] << ", " << cube_mean[1] << ", " << cube_mean[2] << "],"
-            "\"g\": [" << glasses_mean[0] << ", " << glasses_mean[1] << ", " << glasses_mean[2] << "]"
-            "\"r\": [" << rvecs[0][0] << ", " << rvecs[0][1] << ", " << rvecs[0][2] << "]"
+            "\"c\": " << cube_mean - glasses_mean << ","
+            // "\"g\": [" << glasses_mean[0] << ", " << glasses_mean[1] << ", " << glasses_mean[2] << "],"
+            "\"r\": " << glasses_r
             << "}" << endl;
 
         }
@@ -307,12 +303,6 @@ void rotate(double x, double y, double z, Mat &rot_mat, Vec3d &rvec) {
     rot_mat = rot_mat * matZ * matY * matX;
     Rodrigues(rot_mat, rvec);
 }
-
-// void rotate(Vec3d xyz, Mat rot_mat_t, Vec3d &rvec) {
-//     cv::Mat mat;
-//     Rodrigues(xyz, mat);
-//     Rodrigues(rot_mat_t * mat, rvec);
-// }
 
 void get_mean(vector<Vec3d> &points, Vec3d &mean) {
     Vec3d sum = std::accumulate(
