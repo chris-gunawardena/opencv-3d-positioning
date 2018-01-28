@@ -139,28 +139,24 @@ int main(int argc, char *argv[]) {
         waitTime = 0;
     }
 
-    double totalTime = 0;
-    int totalIterations = 0;
-
     double x = 0;
     double y = -0.096;
     double z = -0.126;
     double c = -0.184;
 
+    // process video frames
     while(inputVideo.grab()) {
-        totalIterations++;
-
         Mat image, imageCopy;
         inputVideo.retrieve(image);
 
-        double tick = (double)getTickCount();
-
-        vector< int > ids;
-        vector< vector< Point2f > > corners, rejected;
-        vector< Vec3d > rvecs, tvecs;
+        vector< int > ids; // array of marks ids detected
+        vector< vector< Point2f > > corners, rejected; // corners of each marker
+        vector< Vec3d > rvecs, tvecs; // resolved 3D rotation/pose and postion
 
         // detect markers and estimate pose
         aruco::detectMarkers(image, dictionary, corners, ids, detectorParams, rejected);
+
+        // convert 2d postion to 3d position and pose using camera lens information and known marker length
         if(estimatePose && ids.size() > 0)
             aruco::estimatePoseSingleMarkers(corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
 
