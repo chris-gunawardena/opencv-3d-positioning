@@ -105,7 +105,11 @@ int main(int argc, char *argv[]) {
             return 0;
         }
     }
-    detectorParams->cornerRefinementMethod = aruco::CORNER_REFINE_SUBPIX; // do corner refinement in markers
+    detectorParams->cornerRefinementMethod = aruco::CORNER_REFINE_SUBPIX; // CORNER_REFINE_CONTOUR
+    detectorParams->cornerRefinementMaxIterations = 100; // 30
+    detectorParams->cornerRefinementMinAccuracy = .01; // 0.1
+    detectorParams->polygonalApproxAccuracyRate = 0.01; // 0.05
+
 
     String video;
     if(parser.has("v")) {
