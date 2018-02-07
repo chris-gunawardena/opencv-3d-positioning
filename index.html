@@ -1,14 +1,14 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Socket.IO  three.js</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      canvas { width: 100%; height: 100% }
-    </style>
-  </head>
-  <body></body>
+	<head>
+		<title>Socket.IO  three.js</title>
+		<style>
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+			body { font: 13px Helvetica, Arial; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body></body>
 
 <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
 <script src="/socket.io/socket.io.js"></script>
@@ -18,87 +18,94 @@
 <script src="/node_modules/kalmanjs/lib/kalman.min.js"></script>
 
 <script>
-  // three js scene setup
-  var scene = new THREE.Scene();
-  scene.background = new THREE.Color( 0xcccccc );
-  scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+	// three js scene setup
+	var scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0xcccccc );
+	scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
 
-  var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-  var controls = new THREE.OrbitControls( camera );
-  camera.position.z = 100;
-  controls.update();
+	var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	var controls = new THREE.OrbitControls( camera );
+	camera.position.z = 100;
+	controls.update();
 
-  var renderer = new THREE.WebGLRenderer();
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  document.body.appendChild( renderer.domElement );
+	var renderer = new THREE.WebGLRenderer();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	document.body.appendChild( renderer.domElement );
 
-  var head_mesh;
-    loader = new THREE.JSONLoader();
-    loader.load( 'WaltHeadLo.js', function ( geometry ) {
-      head_mesh = new THREE.Mesh( geometry, new THREE.MeshNormalMaterial( { overdraw: 0.5 } ) );
-      var scale = 0.8;
-      head_mesh.scale.set(scale, scale, scale);
-      scene.add( head_mesh );
-      renderer.render(scene, camera);
-    });
+	var head_mesh;
+		loader = new THREE.JSONLoader();
+		loader.load( 'WaltHeadLo.js', function ( geometry ) {
+			head_mesh = new THREE.Mesh( geometry, new THREE.MeshNormalMaterial( { overdraw: 0.5 } ) );
+			var scale = 0.8;
+			head_mesh.scale.set(scale, scale, scale);
+			scene.add( head_mesh );
+			renderer.render(scene, camera);
+		});
 
-  var cube = new THREE.Mesh( new THREE.BoxGeometry( 5, 5, 5 ), new THREE.MeshPhongMaterial( { color: 0xff0000, flatShading: false } ) );
-  scene.add( cube );
+	var cube = new THREE.Mesh( new THREE.BoxGeometry( 5, 5, 5 ), new THREE.MeshPhongMaterial( { color: 0xff0000, flatShading: false } ) );
+	scene.add( cube );
 
-  var light = new THREE.DirectionalLight( 0xffffff );
-  light.position.set( 1, 1, 1 );
-  scene.add( light );
-  var light = new THREE.DirectionalLight( 0x002288 );
-  light.position.set( -1, -1, -1 );
-  scene.add( light );
-  var light = new THREE.AmbientLight( 0x222222 );
-  scene.add( light );
+	var light = new THREE.DirectionalLight( 0xffffff );
+	light.position.set( 1, 1, 1 );
+	scene.add( light );
+	var light = new THREE.DirectionalLight( 0x002288 );
+	light.position.set( -1, -1, -1 );
+	scene.add( light );
+	var light = new THREE.AmbientLight( 0x222222 );
+	scene.add( light );
 
-  controls.addEventListener( 'change', function(){
-    renderer.render(scene, camera);
-  }); 
-  renderer.render(scene, camera);
+	controls.addEventListener( 'change', function(){
+		renderer.render(scene, camera);
+	}); 
+	renderer.render(scene, camera);
 
 
-  // kalman filter to remove noise
-  var k_head = [...new Array(3)].map(() => new KalmanFilter({R: 0.05, Q: 1}));
-  var k_cube = [...new Array(3)].map(() => new KalmanFilter({R: 0.05, Q: 1}));
+	// kalman filter to remove noise
+	var k_head = [...new Array(3)].map(() => new KalmanFilter({R: 0.5, Q: 5}));
+	var k_cube = [...new Array(3)].map(() => new KalmanFilter({R: 0.5, Q: 5}));
 
-  // get data from cpp stdout
-  var socket = io();
-  socket.on('message', function(data) {
-    var o = JSON.parse(data.replace(/nan/g, 'null'));
-    // head rotation
-    if (o.r) {
+	// get data from cpp stdout
+	var socket = io();
+	socket.on('message', function(data) {
+		var o = JSON.parse(data.replace(/nan/g, 'null'));
+		// head rotation
+		if (o.r) {
 
-      // fix for going from -pi to pi
-      if (o.r[0] < 0)
-          o.r[0] = -Math.PI - o.r[0];
-      else 
-          o.r[0] = Math.PI - o.r[0];
-      
-      // convert openCV coordinates to webGL      
-      o.r = o.r.map((x) => x*-1);
-      o.r[2] *= -1;
+			// fix for going from -pi to pi
+			if (o.r[0] < 0) {
+				o.r[0] = -Math.PI - o.r[0];
+			} else {
+				o.r[0] = Math.PI - o.r[0];
+				o.r[1] = -o.r[1];
+				o.r[2] = -o.r[2];
+			}
+			
+			// convert openCV coordinates to webGL      
+			o.r = o.r.map((x) => x*-1);
+			o.r[2] *= -1;
 
-      head_mesh.rotation.set( k_head[0].filter(o.r[0]), 
-                              k_head[2].filter(o.r[2]), 
-                              k_head[1].filter(o.r[1]));
-    }
+			head_mesh.rotation.set( k_head[0].filter(o.r[0]), 
+									k_head[2].filter(o.r[2]), 
+									k_head[1].filter(o.r[1]));
 
-    // cube postion
-    if (o.c) {
-      // convert openCV coordinates to webGL      
-      o.c = o.c.map((x) => x*-1);
+			// head_mesh.rotation.set(	o.r[0], 
+			// 						o.r[2], 
+			// 						o.r[1]);
+		}
 
-      cube.position.set(k_cube[0].filter(o.c[0]) * 100, 
-                        k_cube[1].filter(o.c[1]) * 100, 
-                        k_cube[2].filter(o.c[2]) * 100);
-    }
+		// cube postion
+		if (o.c) {
+			// convert openCV coordinates to webGL      
+			o.c = o.c.map((x) => x*-1);
 
-    renderer.render(scene, camera);
-    //console.log(data);
-  });
+			cube.position.set(k_cube[0].filter(o.c[0]) * 100, 
+												k_cube[1].filter(o.c[1]) * 100, 
+												k_cube[2].filter(o.c[2]) * 100);
+		}
+
+		renderer.render(scene, camera);
+		//console.log(data);
+	});
 </script>
-    
+		
 </html>

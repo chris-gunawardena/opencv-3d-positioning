@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
         }
     }
     detectorParams->cornerRefinementMethod = aruco::CORNER_REFINE_SUBPIX; // CORNER_REFINE_CONTOUR
-    detectorParams->cornerRefinementMaxIterations = 100; // 30
+    detectorParams->cornerRefinementMaxIterations = 60; // 30
     detectorParams->cornerRefinementMinAccuracy = .01; // 0.1
     detectorParams->polygonalApproxAccuracyRate = 0.01; // 0.05
 
@@ -141,12 +141,15 @@ int main(int argc, char *argv[]) {
     } else {
         inputVideo.open(0);
         waitTime = 0;
+        // inputVideo.set(cv::CAP_PROP_FRAME_WIDTH, 1024);
+        // inputVideo.set(cv::CAP_PROP_FRAME_HEIGHT, 768);
     }
 
     double x = 0;
     double y = -0.096;
     double z = -0.126;
     double c = -0.184;
+
 
     // process video frames
     while(inputVideo.grab()) {
